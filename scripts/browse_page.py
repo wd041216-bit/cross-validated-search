@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Free Web Search Ultimate - 网页浏览与提取 (v7.0)
-修复标题提取问题，支持 gzip 自动解压，增强容错能力
+Free Web Search Ultimate - 网页浏览与提取 (v8.0 Super Workflow Upgraded)
+修复 gzip 解压问题，放宽内容过滤以获取更多有效文本
 """
 import argparse
 import gzip
@@ -16,16 +16,16 @@ ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
 
 def extract_text(html: str) -> str:
-    """简单的文本提取，移除脚本和样式"""
+    """文本提取，放宽了对 nav/header/footer 的过滤以避免误删正文"""
     try:
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(html, 'lxml')
         
-        # 移除无用标签
-        for tag in soup(['script', 'style', 'nav', 'footer', 'header', 'aside', 'noscript']):
+        # 移除绝对无用的标签 (保留 nav, footer, header 等可能有用的上下文)
+        for tag in soup(['script', 'style', 'noscript', 'iframe', 'svg', 'canvas', 'form']):
             tag.decompose()
             
-        # 提取标题 (修复 .string 可能为 None 的问题)
+        # 提取标题
         title = "Unknown Title"
         if soup.title:
             title = soup.title.get_text(strip=True)
@@ -95,7 +95,7 @@ def browse(url: str, max_chars: int = 10000) -> dict:
         }
 
 def main():
-    parser = argparse.ArgumentParser(description="Web Page Browser (v7.0)")
+    parser = argparse.ArgumentParser(description="Web Page Browser (v8.0)")
     parser.add_argument("url", help="URL to browse")
     parser.add_argument("--max-chars", type=int, default=10000, help="Maximum characters to return")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
