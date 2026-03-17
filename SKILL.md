@@ -1,78 +1,68 @@
 ---
-name: free-web-search
-version: "1.0"
+name: free-web-search-ultimate
+version: "4.0.0"
 description: >
-  Simple, reliable web search - DuckDuckGo + Bing fallback.
-  Zero API keys. Uses web_fetch tool. Search + Browse.
-homepage: https://github.com/wd041216-bit/free-web-search
+  Zero-cost, privacy-first web search and browsing for AI agents.
+  Uses DuckDuckGo, Yahoo, and Qwant with cross-validation.
+  No API keys required.
+homepage: https://github.com/wd041216-bit/free-web-search-ultimate
 ---
 
-# Free Web Search v1.0
+# Free Web Search Ultimate v4.0
 
-**Simple > Complex. Reliable > Features.**
+**Zero API Keys. High Reliability. Cross-Validated Results.**
+
+This skill provides AI agents with reliable web search and page browsing capabilities without relying on expensive API keys or external services.
+
+## Features
+
+- **Multi-Engine Search**: Parallel queries to DuckDuckGo, Yahoo, and Qwant.
+- **Cross-Validation**: Automatically groups and validates results across different engines to ensure credibility.
+- **Smart Parsing**: Resolves redirect URLs to provide real, clickable links.
+- **Anti-Bot Bypass**: Uses randomized User-Agents and identity headers to minimize blocking.
+- **Clean Browsing**: Extracts pure text content from web pages, stripping out scripts, styles, and boilerplate.
 
 ## Quick Start
 
-### Search
+### 1. Web Search
 
-```python
-# DuckDuckGo (primary)
-web_fetch(
-    url="https://lite.duckduckgo.com/lite/?q=your+query",
-    extractMode="text",
-    maxChars=5000
-)
+Use `search_web.py` to search the internet. It returns cross-validated results with summaries.
 
-# Bing (fallback if DDG fails)
-web_fetch(
-    url="https://www.bing.com/search?q=your+query",
-    extractMode="text", 
-    maxChars=5000
-)
+```bash
+# Basic usage
+python scripts/search_web.py "Python 3.12 new features"
+
+# JSON output for agent parsing
+python scripts/search_web.py "Python 3.12 new features" --json
 ```
 
-### Browse Page
+### 2. Browse Page
 
-```python
-web_fetch(
-    url="https://example.com/article",
-    extractMode="markdown",
-    maxChars=8000
-)
+Use `browse_page.py` to read the full content of a specific URL.
+
+```bash
+# Read a page (default max 10,000 chars)
+python scripts/browse_page.py "https://docs.python.org/3/whatsnew/3.12.html"
+
+# JSON output
+python scripts/browse_page.py "https://docs.python.org/3/whatsnew/3.12.html" --json
 ```
 
-## Why Simple?
+## Why Use This Skill?
 
-After analyzing competitors:
-- **ddg-web-search**: Ultra-simple, one engine, zero dependencies
-- **Complex skills**: Multiple engines, high failure rate, hard to maintain
+Many web search skills rely on paid APIs (like Brave, Google, or Bing API) or use single engines that often get blocked. 
 
-Our approach:
-- ✅ **Single primary engine**: DuckDuckGo (most reliable)
-- ✅ **One fallback**: Bing (when DDG blocked)
-- ✅ **Zero dependencies**: Just web_fetch
-- ✅ **Reliable**: Works 99% of the time
+**Free Web Search Ultimate** solves this by:
+1. Not requiring any API keys.
+2. Using parallel requests to multiple engines.
+3. Automatically decoding redirect links so agents can actually browse the results.
 
-## When to Use
+## Requirements
 
-Use this skill when you need:
-- Current information from the web
-- To read full article content
-- Zero-cost, no API key solution
+- Python 3.8+
+- `beautifulsoup4`
+- `lxml`
 
-## Workflow
-
-1. **Search** with DDG → Get results
-2. If DDG fails → **Fallback** to Bing
-3. **Browse** top results → Read full content
-4. **Answer** based on actual content
-
-## Limitations
-
-- Text results only (no images/videos)
-- No advanced filtering (by date, region unreliable)
-- May hit rate limits on heavy use
-
----
-
-**v1.0 - Simple & Reliable**
+```bash
+pip install beautifulsoup4 lxml
+```

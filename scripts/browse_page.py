@@ -1,107 +1,101 @@
 #!/usr/bin/env python3
 """
-Browse Page v4.0 - 智能页面浏览
-- 三级策略：Fast/Stealth/Dynamic
+Free Web Search Ultimate - 网页浏览与提取
 """
-
 import argparse
 import json
-import time
+import re
+import ssl
+import sys
 import urllib.request
 
-class PageBrowser:
-    def __init__(self, timeout=30):
-        self.timeout = timeout
-    
-    def fetch_fast(self, url):
-        try:
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            }
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=self.timeout) as r:
-                return r.read().decode('utf-8', errors='ignore')
-        except Exception as e:
-            return None
-    
-    def fetch_stealth(self, url):
-        try:
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'DNT': '1',
-                'Upgrade-Insecure-Requests': '1',
-            }
-            req = urllib.request.Request(url, headers=headers)
-            time.sleep(0.5)
-            with urllib.request.urlopen(req, timeout=self.timeout) as r:
-                return r.read().decode('utf-8', errors='ignore')
-        except Exception as e:
-            return None
-    
-    def browse(self, url, mode="auto", max_words=600):
-        print(f"🌐 浏览: {url}")
-        print(f"🎯 模式: {mode}\n")
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+def extract_text(html: str) -> str:
+    """简单的文本提取，移除脚本和样式"""
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, 'lxml')
         
-        html = None
-        used_mode = mode
+        # 移除无用标签
+        for tag in soup(['script', 'style', 'nav', 'footer', 'header', 'aside', 'noscript']):
+            tag.decompose()
+            
+        # 提取标题
+        title = soup.title.string if soup.title else "Unknown Title"
         
-        if mode == "auto":
-            html = self.fetch_fast(url)
-            used_mode = "fast" if html else "stealth"
-            if not html:
-                html = self.fetch_stealth(url)
-        elif mode == "fast":
-            html = self.fetch_fast(url)
-        elif mode == "stealth":
-            html = self.fetch_stealth(url)
+        # 提取正文
+        text = soup.get_text(separator=' ', strip=True)
+        # 清理多余空白
+        text = re.sub(r'\s+', ' ', text)
         
-        if not html:
-            return {"url": url, "error": "获取失败", "confidence": "LOW"}
+        return title, text
+    except ImportError:
+        # Fallback to regex if bs4 not available
+        title_match = re.search(r'<title[^>]*>([^<]+)</title>', html, re.I)
+        title = title_match.group(1).strip() if title_match else "Unknown Title"
         
-        # 简单提取
-        import re
-        title = re.search(r'<title>([^<]+)</title>', html, re.I)
-        title = title.group(1).strip() if title else "N/A"
-        
-        text = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL|re.I)
-        text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL|re.I)
+        text = re.sub(r'<script[^>]*>.*?</script>', ' ', html, flags=re.DOTALL|re.I)
+        text = re.sub(r'<style[^>]*>.*?</style>', ' ', text, flags=re.DOTALL|re.I)
         text = re.sub(r'<[^>]+>', ' ', text)
         text = re.sub(r'\s+', ' ', text).strip()
-        
-        words = text.split()
-        confidence = "HIGH" if len(words) > 100 else "MEDIUM" if len(words) > 50 else "LOW"
-        
+        return title, text
+
+def browse(url: str, max_chars: int = 10000) -> dict:
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    }
+    
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=15, context=ctx) as r:
+            html = r.read().decode('utf-8', errors='ignore')
+            
+            title, text = extract_text(html)
+            
+            content = text[:max_chars]
+            is_truncated = len(text) > max_chars
+            
+            return {
+                "status": "success",
+                "url": url,
+                "title": title,
+                "content": content,
+                "truncated": is_truncated,
+                "total_length": len(text)
+            }
+    except Exception as e:
         return {
+            "status": "error",
             "url": url,
-            "title": title,
-            "content": text[:max_words*6],
-            "word_count": len(words),
-            "mode": used_mode,
-            "confidence": confidence
+            "error": str(e)
         }
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-u", "--url", required=True)
-    parser.add_argument("-m", "--mode", default="auto", choices=["auto", "fast", "stealth"])
-    parser.add_argument("-w", "--max-words", type=int, default=600)
-    parser.add_argument("--json", action="store_true")
+    parser = argparse.ArgumentParser(description="Web Page Browser")
+    parser.add_argument("url", help="URL to browse")
+    parser.add_argument("--max-chars", type=int, default=10000, help="Maximum characters to return")
+    parser.add_argument("--json", action="store_true", help="Output as JSON")
     
     args = parser.parse_args()
     
-    browser = PageBrowser()
-    result = browser.browse(args.url, args.mode, args.max_words)
+    result = browse(args.url, args.max_chars)
     
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
-        print(f"📄 {result.get('title', 'N/A')}")
-        print(f"✅ 置信度: {result.get('confidence', 'N/A')}")
-        print(f"📊 字数: {result.get('word_count', 0)}")
-        print(f"\n{result.get('content', '')[:500]}...")
+        if result["status"] == "success":
+            print(f"\n📄 {result['title']}")
+            print(f"🔗 {result['url']}")
+            print(f"{'='*60}\n")
+            print(result['content'])
+            if result['truncated']:
+                print(f"\n... [Truncated. Total length: {result['total_length']} chars]")
+        else:
+            print(f"❌ Error browsing {result['url']}: {result['error']}")
 
 if __name__ == "__main__":
     main()

@@ -7,7 +7,7 @@ setup(
     name="free-web-search",
     version="4.0.0",
     author="wd041216-bit",
-    author_email="wd041216@qq.com",
+    author_email="",
     description="Zero-cost, privacy-first web search for AI agents",
     long_description=long_description,
     long_description_content_type="text/markdown",

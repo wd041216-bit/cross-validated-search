@@ -1,117 +1,60 @@
-# 🔍 Free Web Search v1.0
+# Free Web Search Ultimate v4.0
 
-> **Simple, reliable web search for AI agents.**
-> 
-> No API keys. No complex setup. Just works.
+**Zero API Keys. High Reliability. Cross-Validated Results.**
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+This skill provides AI agents with reliable web search and page browsing capabilities without relying on expensive API keys or external services.
 
----
+## Features
 
-## ✨ Why Simple?
+- **Multi-Engine Search**: Parallel queries to DuckDuckGo, Yahoo, and Qwant.
+- **Cross-Validation**: Automatically groups and validates results across different engines to ensure credibility.
+- **Smart Parsing**: Resolves redirect URLs to provide real, clickable links.
+- **Anti-Bot Bypass**: Uses randomized User-Agents and identity headers to minimize blocking.
+- **Clean Browsing**: Extracts pure text content from web pages, stripping out scripts, styles, and boilerplate.
 
-After analyzing 15+ competing web search skills, we learned:
+## Installation
 
-- **Complex skills** = More failure points, harder maintenance
-- **Simple skills** = Reliable, easy to understand, just works
+1. Clone this repository to your agent's workspace.
+2. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-**Our philosophy:**
-- ✅ One primary engine (DuckDuckGo - most reliable)
-- ✅ One fallback (Bing - when needed)
-- ✅ Zero dependencies (just Python stdlib)
-- ✅ Actually works
+## Usage
 
----
+### 1. Web Search
 
-## 🚀 Quick Start
-
-### Install
+Use `search_web.py` to search the internet. It returns cross-validated results with summaries.
 
 ```bash
-# OpenClaw
-clawhub install free-web-search
+# Basic usage
+python scripts/search_web.py "Python 3.12 new features"
 
-# Or manual
-git clone https://github.com/wd041216-bit/free-web-search.git
+# JSON output for agent parsing
+python scripts/search_web.py "Python 3.12 new features" --json
 ```
 
-### Search
+### 2. Browse Page
+
+Use `browse_page.py` to read the full content of a specific URL.
 
 ```bash
-python scripts/search.py "your query"
+# Read a page (default max 10,000 chars)
+python scripts/browse_page.py "https://docs.python.org/3/whatsnew/3.12.html"
+
+# JSON output
+python scripts/browse_page.py "https://docs.python.org/3/whatsnew/3.12.html" --json
 ```
 
-### Browse
+## Why Use This Skill?
 
-```bash
-python scripts/browse.py "https://example.com"
-```
+Many web search skills rely on paid APIs (like Brave, Google, or Bing API) or use single engines that often get blocked. 
 
-### Python API
+**Free Web Search Ultimate** solves this by:
+1. Not requiring any API keys.
+2. Using parallel requests to multiple engines.
+3. Automatically decoding redirect links so agents can actually browse the results.
 
-```python
-from scripts.search import search_ddg, search_bing
+## License
 
-# Search
-result = search_ddg("Python tutorials")
-
-# Browse
-from scripts.browse import browse_page
-content = browse_page("https://docs.python.org")
-```
-
----
-
-## 🎯 Features
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| DuckDuckGo Search | ✅ | Primary engine, most reliable |
-| Bing Fallback | ✅ | When DDG blocked |
-| Page Browsing | ✅ | Extract text content |
-| Zero Dependencies | ✅ | Python stdlib only |
-| No API Keys | ✅ | Completely free |
-
----
-
-## 📊 Comparison
-
-| Skill | Engines | Dependencies | Complexity | Reliability |
-|-------|---------|--------------|------------|-------------|
-| ddg-web-search | 1 | 0 | ⭐ | ⭐⭐⭐ |
-| **free-web-search** | 2 | 0 | ⭐⭐ | ⭐⭐⭐ |
-| Complex skills | 5+ | Many | ⭐⭐⭐⭐⭐ | ⭐⭐ |
-
-**We aim for the sweet spot:** Simple enough to be reliable, robust enough for real use.
-
----
-
-## 🔒 Privacy
-
-- No API keys required
-- No tracking
-- No data collection
-- Searches go directly to DDG/Bing
-
----
-
-## 🛠️ Development
-
-```bash
-# Test search
-python scripts/search.py "test query"
-
-# Test browse
-python scripts/browse.py "https://example.com"
-```
-
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE)
-
----
-
-**Made with ❤️ for the OpenClaw community.**
+MIT License
