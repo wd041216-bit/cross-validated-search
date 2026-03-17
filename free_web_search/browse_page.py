@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Free Web Search Ultimate - 网页浏览与提取 (v8.0 Super Workflow Upgraded)
+Free Web Search Ultimate - 网页浏览与提取 (v10.0 CLI-Anything Harness)
 修复 gzip 解压问题，放宽内容过滤以获取更多有效文本
 """
 import argparse
@@ -95,7 +95,7 @@ def browse(url: str, max_chars: int = 10000) -> dict:
         }
 
 def main():
-    parser = argparse.ArgumentParser(description="Web Page Browser (v8.0)")
+    parser = argparse.ArgumentParser(description="Web Page Browser (v10.0 CLI-Anything Harness)")
     parser.add_argument("url", help="URL to browse")
     parser.add_argument("--max-chars", type=int, default=10000, help="Maximum characters to return")
     parser.add_argument("--json", action="store_true", help="Output as JSON")

@@ -1,3 +1,13 @@
+---
+name: free-web-search-ultimate
+version: "10.0.0"
+description: >
+  Zero-cost, privacy-first web search and browsing for AI agents.
+  Supports text, news, books, videos, and IMAGES search types with region targeting.
+  Powered by official ddgs with optimized single-request fetching and un-truncated URLs.
+homepage: https://github.com/wd041216-bit/free-web-search-ultimate
+---
+
 # Free Web Search Ultimate v10.0 (CLI-Anything Harness)
 
 **Standard Python Package. PATH Execution. REPL Mode. Auto-Discoverable SKILL.**
@@ -18,19 +28,7 @@ This skill provides AI agents with reliable web search and page browsing capabil
 - **Cross-Validation**: Automatically groups and validates results to ensure credibility.
 - **Clean Browsing**: Extracts pure text content from web pages, stripping out scripts and styles while preserving useful context.
 
-## Installation
-
-Install directly as a standard Python package (CLI-Anything Harness):
-
-```bash
-# Install from source
-pip install -e .
-
-# Or install directly from GitHub
-pip install git+https://github.com/wd041216-bit/free-web-search-ultimate.git
-```
-
-## Usage
+## Quick Start
 
 ### 1. Web Search
 
@@ -78,16 +76,13 @@ browse-page "https://docs.python.org/3/whatsnew/3.12.html"
 browse-page "https://docs.python.org/3/whatsnew/3.12.html" --json
 ```
 
-## Why Use This Skill?
+## Requirements
 
-Many web search skills rely on paid APIs (like Brave, Google, or Bing API) or use outdated HTML scraping methods that often get blocked. 
+- Python 3.8+
+- `beautifulsoup4`
+- `lxml`
+- `ddgs`
 
-**Free Web Search Ultimate** solves this by:
-1. Not requiring any API keys.
-2. Using the official `ddgs` library as the primary engine for extreme stability.
-3. Providing dedicated endpoints for text, news, images, books, and videos.
-4. Outputting agent-friendly, token-efficient JSON responses.
-
-## License
-
-MIT License
+```bash
+pip install -r requirements.txt
+```

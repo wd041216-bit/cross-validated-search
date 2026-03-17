@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Free Web Search Ultimate - 超级搜索核心 (v9.0 Super Workflow Upgraded)
-新增 images 搜索，支持丰富过滤参数，移除冗余的双任务并发，优化 JSON 输出
+Free Web Search Ultimate - 超级搜索核心 (v10.0 CLI-Anything Harness)
+支持标准 Python 包 entry_points，新增 REPL 交互模式，SKILL.md 自动发现
 """
 import argparse
 import json
@@ -215,8 +215,12 @@ class UltimateSearcher:
         )
 
 def main():
-    parser = argparse.ArgumentParser(description="Free Web Search Ultimate (v9.0)")
-    parser.add_argument("query", help="搜索关键词")
+    parser = argparse.ArgumentParser(
+        description="Free Web Search Ultimate (v10.0 CLI-Anything Harness)",
+        epilog="Examples:\n  search-web \"Python 3.12\"\n  search-web \"OpenAI\" --type news\n  search-web  # Run without arguments to enter REPL mode",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("query", nargs="?", help="搜索关键词 (不填则进入 REPL 模式)")
     parser.add_argument("--type", choices=["text", "news", "videos", "books", "images"], default="text", help="搜索类型")
     parser.add_argument("--region", default="wt-wt", help="地区代码，如 zh-cn, en-us, wt-wt(全球)")
     parser.add_argument("--timelimit", choices=["d", "w", "m", "y"], help="时间限制: d(天), w(周), m(月), y(年)")
@@ -230,13 +234,65 @@ def main():
     
     args = parser.parse_args()
     
+    searcher = UltimateSearcher()
+    
+    # REPL 模式
+    if not args.query:
+        import os
+        import sys
+        
+        # 尝试查找 SKILL.md 路径以符合 CLI-Anything 标准
+        skill_path = os.path.join(os.path.dirname(__file__), "skills", "SKILL.md")
+        skill_msg = f"\n📖 SKILL.md: {skill_path}" if os.path.exists(skill_path) else ""
+        
+        print(f"\n{'='*60}")
+        print("🔍 Free Web Search Ultimate REPL (v10.0)")
+        print("Type your query and press Enter. Type 'exit' or 'quit' to exit.")
+        print("Advanced options can be added after the query, e.g.:")
+        print("  apple --type news")
+        print("  python --region zh-cn --timelimit w" + skill_msg)
+        print(f"{'='*60}\n")
+        
+        while True:
+            try:
+                user_input = input("\nsearch-web> ").strip()
+                if not user_input:
+                    continue
+                if user_input.lower() in ['exit', 'quit']:
+                    break
+                    
+                # 简单解析 REPL 中的参数
+                repl_args = user_input.split()
+                try:
+                    parsed_repl = parser.parse_args(repl_args)
+                except SystemExit:
+                    continue # 捕获 argparse 的退出异常，保持 REPL 运行
+                
+                kwargs = {}
+                if parsed_repl.size: kwargs['size'] = parsed_repl.size
+                if parsed_repl.color: kwargs['color'] = parsed_repl.color
+                if parsed_repl.type_image: kwargs['type_image'] = parsed_repl.type_image
+                if parsed_repl.license: kwargs['license_image'] = parsed_repl.license
+                
+                if parsed_repl.query:
+                    answer = searcher.search(parsed_repl.query, search_type=parsed_repl.type, timelimit=parsed_repl.timelimit, region=parsed_repl.region, **kwargs)
+                    print(f"\n⏱️  耗时: {answer.elapsed_ms}ms | 找到 {answer.validation['unique_results']} 个结果")
+                    if answer.sources:
+                        for s in answer.sources[:5]: # REPL 中只显示前 5 个
+                            print(f"  {s.rank}. [{s.engine}] {s.title[:60]}")
+                            print(f"     {s.url}")
+            except KeyboardInterrupt:
+                break
+            except EOFError:
+                break
+        return
+
     kwargs = {}
     if args.size: kwargs['size'] = args.size
     if args.color: kwargs['color'] = args.color
     if args.type_image: kwargs['type_image'] = args.type_image
     if args.license: kwargs['license_image'] = args.license
     
-    searcher = UltimateSearcher()
     answer = searcher.search(args.query, search_type=args.type, timelimit=args.timelimit, region=args.region, **kwargs)
     
     if args.json:
