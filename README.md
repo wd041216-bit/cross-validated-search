@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="assets/banner.png" alt="Free Web Search Ultimate" width="100%"/>
   <h1>🔍 Free Web Search Ultimate</h1>
   <p><strong>Zero-cost, privacy-first web search and browsing skill for AI agents.</strong></p>
   
