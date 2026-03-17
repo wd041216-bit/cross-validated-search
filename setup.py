@@ -1,20 +1,20 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="free-web-search",
-    version="9.0.0",
+    name="free-web-search-ultimate",
+    version="10.0.0",
     author="wd041216-bit",
     author_email="",
-    description="Zero-cost, privacy-first web search for AI agents",
+    description="Zero-cost, privacy-first web search for AI agents (CLI-Anything Harness)",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/wd041216-bit/free-web-search",
-    packages=find_packages(),
+    url="https://github.com/wd041216-bit/free-web-search-ultimate",
+    packages=find_namespace_packages(include=["free_web_search*"]),
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
@@ -34,20 +34,15 @@ setup(
         "lxml>=4.6.0",
         "ddgs>=0.1.0",
     ],
-    extras_require={
-        "dynamic": ["playwright>=1.40.0"],
-        "dev": [
-            "pytest>=7.0.0",
-            "pytest-cov>=4.0.0",
-            "black>=23.0.0",
-            "flake8>=6.0.0",
-            "mypy>=1.0.0",
-        ],
-    },
     entry_points={
         "console_scripts": [
-            "free-web-search=scripts.search_web:main",
-            "free-web-browse=scripts.browse_page:main",
+            "search-web=free_web_search.search_web:main",
+            "browse-page=free_web_search.browse_page:main",
         ],
     },
+    package_data={
+        "free_web_search": ["skills/*.md"],
+    },
+    include_package_data=True,
+    zip_safe=False,
 )
