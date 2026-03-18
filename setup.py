@@ -7,7 +7,7 @@ setup(
     name="free-web-search-ultimate",
     version="13.0.0",
     author="wd041216-bit",
-    author_email="",
+    author_email="wd041216@uw.edu",
     description="Universal Search-First Knowledge Acquisition Plugin for LLMs (MCP + CLI-Anything)",
     long_description=long_description,
     long_description_content_type="text/markdown",

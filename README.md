@@ -4,7 +4,8 @@
   <p><strong>Universal Search-First Knowledge Acquisition Plugin for LLMs</strong></p>
   <p><em>One install. Every LLM. Real-time knowledge. Zero cost.</em></p>
   
-  [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
+  [![PyPI version](https://badge.fury.io/py/free-web-search-ultimate.svg)](https://pypi.org/project/free-web-search-ultimate/)
+  [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
   [![MCP Ready](https://img.shields.io/badge/MCP-Ready-purple.svg)](https://modelcontextprotocol.io/)
   [![CLI-Anything](https://img.shields.io/badge/CLI--Anything-Compatible-success.svg)](https://github.com/HKUDS/CLI-Anything)
   [![OpenClaw](https://img.shields.io/badge/OpenClaw-Skill-orange.svg)](https://github.com/openclaw/awesome-openclaw)
@@ -28,6 +29,8 @@ By default, every LLM—Claude, GPT-4, Gemini—answers questions from training 
 
 One plugin, every ecosystem. Whether you use Claude Desktop, Cursor, OpenClaw, or a custom LangChain agent, this plugin connects your LLM to the live web through a unified interface.
 
+The `free_web_search/skills/` directory contains the auto-discoverable `SKILL.md` that CLI-Anything compatible frameworks (such as OpenClaw) load automatically at startup — no manual configuration required.
+
 ## 🌟 The "Search-First" Paradigm
 
 | Old Paradigm (Default LLM) | New Paradigm (This Plugin) |
@@ -46,7 +49,17 @@ When this plugin is installed, the AI agent is instructed to:
 ## 📦 Installation
 
 ```bash
-pip install git+https://github.com/wd041216-bit/free-web-search-ultimate.git
+pip install free-web-search-ultimate
+```
+
+> **Requirements:** Python 3.10+
+
+Or install from source:
+
+```bash
+git clone https://github.com/wd041216-bit/free-web-search-ultimate.git
+cd free-web-search-ultimate
+pip install -e .
 ```
 
 ## 🔌 Integration Guide
@@ -71,8 +84,8 @@ That's it. Claude and Cursor will now have access to `search_web` and `browse_pa
 ### OpenClaw (via CLI-Anything)
 
 ```bash
-# Install and the skill is auto-discovered
-pip install git+https://github.com/wd041216-bit/free-web-search-ultimate.git
+# Install — the skill is auto-discovered from the bundled SKILL.md
+pip install free-web-search-ultimate
 ```
 
 OpenClaw reads the bundled `SKILL.md` and automatically loads the Search-First behavioral instructions.

@@ -1,6 +1,6 @@
 ---
 name: free-web-search-ultimate
-version: "12.0.0"
+version: "13.0.0"
 description: >
   Universal Search-First Knowledge Acquisition Plugin for LLMs.
   Enables real-time web search and deep page browsing via MCP or CLI.
@@ -8,7 +8,7 @@ description: >
 homepage: https://github.com/wd041216-bit/free-web-search-ultimate
 ---
 
-# Free Web Search Ultimate v12.0 — Search-First Paradigm
+# Free Web Search Ultimate v13.0 — Search-First Paradigm
 
 ## Overview
 

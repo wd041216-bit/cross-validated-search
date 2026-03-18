@@ -84,6 +84,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-engine validation for higher confidence results
 - News search with timestamps
 
+## [6.0.0] - 2024-11-20
+
+### Added
+- Super Workflow Round 2: parallel multi-engine search
+- Deduplication logic for cross-engine results
+
+## [5.0.0] - 2024-11-10
+
+### Added
+- `browse-page` command for deep page content extraction
+- BeautifulSoup + lxml parsing pipeline
+
+## [4.0.0] - 2024-11-01
+
+### Added
+- Super Workflow Round 1: structured JSON output for LLM consumption
+- `--json` flag for machine-readable output
+
+## [3.0.0] - 2024-10-20
+
+### Added
+- Region-specific search support (`--region` flag)
+- Time-limited search (`--timelimit` flag: d/w/m/y)
+
+## [2.0.0] - 2024-10-10
+
+### Added
+- News search support (`--type news`)
+- Multi-result output with ranked snippets
+
 ## [1.0.0] - 2024-10-01
 
 ### Added
