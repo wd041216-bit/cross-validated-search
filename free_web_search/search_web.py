@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
-"""
-Free Web Search Ultimate - 超级搜索核心 (v10.0 CLI-Anything Harness)
-支持标准 Python 包 entry_points，新增 REPL 交互模式，SKILL.md 自动发现
+"""Free Web Search Ultimate - Universal Search Core (v13.0).
+
+Supports standard Python package entry_points, REPL interactive mode,
+and SKILL.md auto-discovery for CLI-Anything compatibility.
+
+Entry points:
+    search-web: Main CLI for web/news/image/video/book search
+    browse-page: Page content extractor
+    free-web-search-mcp: MCP server for LLM tool use
 """
 import argparse
 import json
@@ -12,13 +18,27 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from typing import Dict, List, Optional
 
-# 全局禁用 SSL 验证，应对部分网络环境
+# Disable SSL verification globally to handle restrictive network environments
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
 
+
 @dataclass
 class Source:
+    """A single search result source.
+
+    Attributes:
+        url: The URL of the source.
+        title: The title of the page or article.
+        snippet: A short excerpt or description.
+        rank: The result rank (1-based, assigned after deduplication).
+        engine: The search engine that returned this result.
+        cross_validated: Whether this URL appeared in multiple engine results.
+        date: Publication or update date (if available).
+        extra: Additional type-specific metadata (e.g., image dimensions).
+    """
+
     url: str
     title: str
     snippet: str = ""
@@ -32,8 +52,22 @@ class Source:
         if self.extra is None:
             self.extra = {}
 
+
 @dataclass
 class Answer:
+    """The complete answer returned by UltimateSearcher.search().
+
+    Attributes:
+        query: The original search query.
+        search_type: The type of search performed (text, news, images, etc.).
+        answer: A brief markdown-formatted summary of the top sources.
+        confidence: Confidence level: HIGH, MEDIUM, or LOW.
+        sources: List of deduplicated and ranked Source objects.
+        validation: Statistics about result counts and cross-validation.
+        metadata: Engine usage info and any errors encountered.
+        elapsed_ms: Total search time in milliseconds.
+    """
+
     query: str
     search_type: str
     answer: str
@@ -43,134 +77,247 @@ class Answer:
     metadata: Dict
     elapsed_ms: int
 
+
 class UltimateSearcher:
+    """Universal web searcher using DuckDuckGo with cross-validation.
+
+    Supports text, news, images, videos, and books search types.
+    Results are deduplicated and ranked by cross-validation confidence.
+
+    Example:
+        searcher = UltimateSearcher()
+        answer = searcher.search("Python 3.12 release notes")
+        for source in answer.sources[:5]:
+            print(source.title, source.url)
+    """
+
     def __init__(self, timeout: int = 15):
+        """Initialize the searcher.
+
+        Args:
+            timeout: HTTP request timeout in seconds (default: 15).
+        """
         self.timeout = timeout
-        
-    def _search_ddgs(self, query: str, search_type: str, timelimit: str = None, region: str = "wt-wt", max_results: int = 15, **kwargs) -> List[Source]:
-        """使用官方 ddgs 库进行搜索（每次调用创建新实例保证线程安全）"""
+
+    def _search_ddgs(
+        self,
+        query: str,
+        search_type: str,
+        timelimit: Optional[str] = None,
+        region: str = "wt-wt",
+        max_results: int = 15,
+        **kwargs,
+    ) -> List[Source]:
+        """Perform a search using the ddgs library (thread-safe, new instance per call).
+
+        Args:
+            query: The search query string.
+            search_type: One of 'text', 'news', 'videos', 'books', 'images'.
+            timelimit: Time filter — 'd' (day), 'w' (week), 'm' (month), 'y' (year),
+                or None for no limit.
+            region: DuckDuckGo region code, e.g. 'wt-wt' (global), 'zh-cn', 'en-us'.
+            max_results: Maximum number of raw results to fetch.
+            **kwargs: Additional type-specific parameters (e.g., size, color for images).
+
+        Returns:
+            A list of Source objects. On error, returns a single Source with
+            url='error' and the error message in title.
+        """
         results = []
         try:
             from ddgs import DDGS
-            # 创建局部实例
             with DDGS(timeout=self.timeout) as ddgs:
                 if search_type == "text":
-                    api_results = ddgs.text(query, region=region, max_results=max_results, timelimit=timelimit)
+                    api_results = ddgs.text(
+                        query,
+                        region=region,
+                        max_results=max_results,
+                        timelimit=timelimit,
+                    )
                 elif search_type == "news":
-                    api_results = ddgs.news(query, region=region, max_results=max_results, timelimit=timelimit)
+                    api_results = ddgs.news(
+                        query,
+                        region=region,
+                        max_results=max_results,
+                        timelimit=timelimit,
+                    )
                 elif search_type == "videos":
-                    api_results = ddgs.videos(query, region=region, max_results=max_results, timelimit=timelimit)
+                    api_results = ddgs.videos(
+                        query,
+                        region=region,
+                        max_results=max_results,
+                        timelimit=timelimit,
+                    )
                 elif search_type == "books":
                     api_results = ddgs.books(query, max_results=max_results)
                 elif search_type == "images":
-                    # images 接口支持丰富的 kwargs
-                    # 注意：ddgs images 的 size 参数可用性与网络环境相关，自动降级尝试
-                    img_size = kwargs.get('size') or 'Wallpaper'
-                    size_fallbacks = [img_size, 'Wallpaper', 'Small', 'Large', 'Medium']
+                    # Images API supports rich kwargs; auto-fallback on size errors
+                    img_size = kwargs.get("size") or "Wallpaper"
+                    size_fallbacks = [img_size, "Wallpaper", "Small", "Large", "Medium"]
                     api_results = None
                     for try_size in size_fallbacks:
                         try:
-                            api_results = ddgs.images(query, region=region, max_results=max_results, timelimit=timelimit, 
-                                                    size=try_size, color=kwargs.get('color'), 
-                                                    type_image=kwargs.get('type_image'), layout=kwargs.get('layout'),
-                                                    license_image=kwargs.get('license_image'))
-                            break  # 成功则退出循环
+                            api_results = ddgs.images(
+                                query,
+                                region=region,
+                                max_results=max_results,
+                                timelimit=timelimit,
+                                size=try_size,
+                                color=kwargs.get("color"),
+                                type_image=kwargs.get("type_image"),
+                                layout=kwargs.get("layout"),
+                                license_image=kwargs.get("license_image"),
+                            )
+                            break
                         except Exception:
-                            continue  # 尝试下一个 size
+                            continue
                     if api_results is None:
                         api_results = []
                 else:
                     return []
-                    
+
                 for r in api_results:
-                    url = r.get('href', r.get('url', r.get('content', '')))
+                    url = r.get("href", r.get("url", r.get("content", "")))
                     if not url:
                         continue
-                        
+
                     source = Source(
                         url=url,
-                        title=r.get('title', ''),
-                        snippet=r.get('body', r.get('description', '')),
-                        rank=0, # 初始 rank，后续处理
-                        engine=f'DDG-{search_type.capitalize()}',
-                        date=r.get('date', r.get('published', '')),
-                        extra={}
+                        title=r.get("title", ""),
+                        snippet=r.get("body", r.get("description", "")),
+                        rank=0,  # Assigned later after deduplication
+                        engine=f"DDG-{search_type.capitalize()}",
+                        date=r.get("date", r.get("published", "")),
+                        extra={},
                     )
-                    
-                    # 提取不同类型的额外信息
+
+                    # Extract type-specific extra metadata
                     if search_type == "videos":
-                        source.extra['duration'] = r.get('duration')
-                        source.extra['publisher'] = r.get('publisher')
+                        source.extra["duration"] = r.get("duration")
+                        source.extra["publisher"] = r.get("publisher")
                     elif search_type == "books":
-                        source.extra['author'] = r.get('author')
-                        source.extra['year'] = r.get('year')
+                        source.extra["author"] = r.get("author")
+                        source.extra["year"] = r.get("year")
                     elif search_type == "images":
-                        source.url = r.get('image', url) # image 搜索中，url 字段通常是来源页，image 字段是原图
-                        source.extra['source_url'] = url
-                        source.extra['thumbnail'] = r.get('thumbnail')
-                        source.extra['width'] = r.get('width')
-                        source.extra['height'] = r.get('height')
-                        source.extra['source'] = r.get('source')
-                        
+                        # For images, 'image' field is the direct image URL;
+                        # 'href'/'url' is the source page URL
+                        source.url = r.get("image", url)
+                        source.extra["source_url"] = url
+                        source.extra["thumbnail"] = r.get("thumbnail")
+                        source.extra["width"] = r.get("width")
+                        source.extra["height"] = r.get("height")
+                        source.extra["source"] = r.get("source")
+
                     results.append(source)
         except Exception as e:
-            results.append(Source(url="error", title=f"Error: {str(e)}", engine="error"))
+            results.append(
+                Source(url="error", title=f"Error: {str(e)}", engine="error")
+            )
         return results
 
     def _cross_validate(self, all_results: List[Source]) -> List[Source]:
-        """交叉验证和去重，并分配 rank"""
-        url_groups = {}
+        """Deduplicate results and assign ranks based on cross-validation.
+
+        URLs are normalized (scheme and www stripped) before grouping.
+        Results appearing from multiple engines are marked as cross-validated
+        and ranked higher.
+
+        Args:
+            all_results: Raw list of Source objects from all engines.
+
+        Returns:
+            Deduplicated and ranked list of Source objects, sorted with
+            cross-validated results first.
+        """
+        url_groups: Dict[str, List[Source]] = {}
         for r in all_results:
             if r.url == "error":
                 continue
-                
-            simplified = re.sub(r'^https?://(www\.)?', '', r.url).rstrip('/')
-            simplified = simplified.split('#')[0].split('?')[0]
-            
+
+            simplified = re.sub(r"^https?://(www\.)?", "", r.url).rstrip("/")
+            simplified = simplified.split("#")[0].split("?")[0]
+
             if not simplified:
                 continue
-                
+
             if simplified not in url_groups:
                 url_groups[simplified] = []
             url_groups[simplified].append(r)
-        
+
         validated = []
         for url, group in url_groups.items():
             best_source = group[0]
-            
+
             if len(group) >= 2:
                 best_source.cross_validated = True
                 best_source.engine = f"{best_source.engine} (x{len(group)})"
-            
+
+            # Use the longest snippet available across duplicates
             valid_snippets = [s.snippet for s in group if len(s.snippet) > 20]
             if valid_snippets:
                 best_source.snippet = max(valid_snippets, key=len)
-                
+
             validated.append(best_source)
-        
-        # 按原始出现顺序和交叉验证情况排序
+
+        # Cross-validated results first, then by original order
         validated.sort(key=lambda x: x.cross_validated, reverse=True)
-        
-        # 分配 rank
+
+        # Assign 1-based ranks
         for i, s in enumerate(validated, 1):
             s.rank = i
-            
+
         return validated
 
-    def search(self, query: str, search_type: str = "text", timelimit: str = None, region: str = "wt-wt", **kwargs) -> Answer:
+    def search(
+        self,
+        query: str,
+        search_type: str = "text",
+        timelimit: Optional[str] = None,
+        region: str = "wt-wt",
+        **kwargs,
+    ) -> Answer:
+        """Search the web and return a structured Answer.
+
+        Args:
+            query: The search query string.
+            search_type: Type of search — 'text' (default), 'news', 'images',
+                'videos', or 'books'.
+            timelimit: Time filter — 'd' (past day), 'w' (past week),
+                'm' (past month), 'y' (past year), or None for no limit.
+            region: DuckDuckGo region code (default: 'wt-wt' for global).
+                Use 'zh-cn' for Chinese results, 'en-us' for US English, etc.
+            **kwargs: Additional type-specific parameters forwarded to the
+                underlying search engine (e.g., size='Large' for images).
+
+        Returns:
+            An Answer object containing the query, sources, confidence level,
+            validation statistics, and elapsed time.
+
+        Example:
+            searcher = UltimateSearcher()
+            answer = searcher.search(
+                "OpenAI GPT-4o release",
+                search_type="news",
+                timelimit="w",
+            )
+            print(answer.confidence)   # HIGH / MEDIUM / LOW
+            print(answer.sources[0].url)
+        """
         start_time = time.time()
-        
-        # v9.0 优化：不再使用双任务并发获取同一类型结果，而是直接请求足够的数量，避免浪费网络
+
+        # Fetch enough results in a single request to avoid wasted network calls
         max_results = 30 if search_type == "text" else 20
-        
-        # 仍然使用 ThreadPoolExecutor 以便未来扩展多引擎，目前只有一个任务
+
+        # ThreadPoolExecutor kept for future multi-engine expansion
         engines = [(self._search_ddgs, query, search_type, timelimit, region, max_results)]
-        
+
         all_results = []
         errors = []
         with ThreadPoolExecutor(max_workers=1) as executor:
-            # 传递 kwargs 给任务
-            futures = [executor.submit(e[0], e[1], e[2], e[3], e[4], e[5], **kwargs) for e in engines]
+            futures = [
+                executor.submit(e[0], e[1], e[2], e[3], e[4], e[5], **kwargs)
+                for e in engines
+            ]
             for future in as_completed(futures):
                 res = future.result()
                 for r in res:
@@ -178,11 +325,10 @@ class UltimateSearcher:
                         errors.append(r.title)
                     else:
                         all_results.append(r)
-                
+
         validated_results = self._cross_validate(all_results)
-        
-        # v9.0 优化：answer 字段改为极简摘要，不重复完整 snippet，节省 token
-        answer_text = ""
+
+        # Build a concise markdown summary of the top 5 sources
         if validated_results:
             answer_parts = []
             for i, s in enumerate(validated_results[:5], 1):
@@ -190,12 +336,12 @@ class UltimateSearcher:
                 answer_parts.append(f"{i}. {badge} [{s.title}]({s.url})")
             answer_text = "Top Sources:\n" + "\n".join(answer_parts)
         else:
-            error_msg = f" (Errors: {'; '.join(errors)})" if errors else ""
-            answer_text = f"未找到相关结果，搜索引擎可能受到限制。{error_msg}"
-            
+            error_detail = f" (Errors: {'; '.join(errors)})" if errors else ""
+            answer_text = f"No results found. The search engine may be rate-limited.{error_detail}"
+
         cross_count = sum(1 for s in validated_results if s.cross_validated)
         confidence = "HIGH" if cross_count >= 2 else ("MEDIUM" if validated_results else "LOW")
-        
+
         return Answer(
             query=query,
             search_type=search_type,
@@ -205,80 +351,136 @@ class UltimateSearcher:
             validation={
                 "total_results": len(all_results),
                 "unique_results": len(validated_results),
-                "cross_validated": cross_count
+                "cross_validated": cross_count,
             },
             metadata={
                 "engines_used": [e[2] for e in engines],
-                "errors": errors
+                "errors": errors,
             },
-            elapsed_ms=int((time.time() - start_time) * 1000)
+            elapsed_ms=int((time.time() - start_time) * 1000),
         )
 
+
 def main():
+    """CLI entry point for search-web command."""
     parser = argparse.ArgumentParser(
-        description="Free Web Search Ultimate (v10.0 CLI-Anything Harness)",
-        epilog="Examples:\n  search-web \"Python 3.12\"\n  search-web \"OpenAI\" --type news\n  search-web  # Run without arguments to enter REPL mode",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        description="Free Web Search Ultimate (v13.0)",
+        epilog=(
+            "Examples:\n"
+            "  search-web \"Python 3.12\"\n"
+            "  search-web \"OpenAI\" --type news\n"
+            "  search-web \"AI news\" --type news --timelimit w\n"
+            "  search-web  # Run without arguments to enter REPL mode"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("query", nargs="?", help="搜索关键词 (不填则进入 REPL 模式)")
-    parser.add_argument("--type", choices=["text", "news", "videos", "books", "images"], default="text", help="搜索类型")
-    parser.add_argument("--region", default="wt-wt", help="地区代码，如 zh-cn, en-us, wt-wt(全球)")
-    parser.add_argument("--timelimit", choices=["d", "w", "m", "y"], help="时间限制: d(天), w(周), m(月), y(年)")
-    parser.add_argument("--json", action="store_true", help="输出JSON格式")
-    
-    # images 专属参数
-    parser.add_argument("--size", choices=["Small", "Medium", "Large", "Wallpaper"], help="[images] 图片尺寸")
-    parser.add_argument("--color", help="[images] 图片颜色，如 Red, Blue, Monochrome 等")
-    parser.add_argument("--type_image", choices=["photo", "clipart", "gif", "transparent", "line"], help="[images] 图片类型")
-    parser.add_argument("--license", choices=["any", "Public", "Share", "ShareCommercially", "Modify", "ModifyCommercially"], help="[images] 图片许可")
-    
+    parser.add_argument(
+        "query",
+        nargs="?",
+        help="Search query (omit to enter REPL mode)",
+    )
+    parser.add_argument(
+        "--type",
+        choices=["text", "news", "videos", "books", "images"],
+        default="text",
+        help="Search type (default: text)",
+    )
+    parser.add_argument(
+        "--region",
+        default="wt-wt",
+        help="Region code, e.g. zh-cn, en-us, wt-wt (global)",
+    )
+    parser.add_argument(
+        "--timelimit",
+        choices=["d", "w", "m", "y"],
+        help="Time limit: d (day), w (week), m (month), y (year)",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output results in JSON format",
+    )
+
+    # Image-specific parameters
+    parser.add_argument(
+        "--size",
+        choices=["Small", "Medium", "Large", "Wallpaper"],
+        help="[images] Image size filter",
+    )
+    parser.add_argument(
+        "--color",
+        help="[images] Color filter, e.g. Red, Blue, Monochrome",
+    )
+    parser.add_argument(
+        "--type_image",
+        choices=["photo", "clipart", "gif", "transparent", "line"],
+        help="[images] Image type filter",
+    )
+    parser.add_argument(
+        "--license",
+        choices=["any", "Public", "Share", "ShareCommercially", "Modify", "ModifyCommercially"],
+        help="[images] License filter",
+    )
+
     args = parser.parse_args()
-    
+
     searcher = UltimateSearcher()
-    
-    # REPL 模式
+
+    # REPL mode (no query provided)
     if not args.query:
         import os
         import sys
-        
-        # 尝试查找 SKILL.md 路径以符合 CLI-Anything 标准
+
         skill_path = os.path.join(os.path.dirname(__file__), "skills", "SKILL.md")
         skill_msg = f"\n📖 SKILL.md: {skill_path}" if os.path.exists(skill_path) else ""
-        
+
         print(f"\n{'='*60}")
-        print("🔍 Free Web Search Ultimate REPL (v10.0)")
-        print("Type your query and press Enter. Type 'exit' or 'quit' to exit.")
-        print("Advanced options can be added after the query, e.g.:")
+        print("🔍 Free Web Search Ultimate REPL (v13.0)")
+        print("Type your query and press Enter. Type 'exit' or 'quit' to quit.")
+        print("Advanced options can be appended after the query, e.g.:")
         print("  apple --type news")
         print("  python --region zh-cn --timelimit w" + skill_msg)
         print(f"{'='*60}\n")
-        
+
         while True:
             try:
                 user_input = input("\nsearch-web> ").strip()
                 if not user_input:
                     continue
-                if user_input.lower() in ['exit', 'quit']:
+                if user_input.lower() in ["exit", "quit"]:
                     break
-                    
-                # 简单解析 REPL 中的参数
+
                 repl_args = user_input.split()
                 try:
                     parsed_repl = parser.parse_args(repl_args)
                 except SystemExit:
-                    continue # 捕获 argparse 的退出异常，保持 REPL 运行
-                
+                    continue  # Suppress argparse exit; keep REPL running
+
                 kwargs = {}
-                if parsed_repl.size: kwargs['size'] = parsed_repl.size
-                if parsed_repl.color: kwargs['color'] = parsed_repl.color
-                if parsed_repl.type_image: kwargs['type_image'] = parsed_repl.type_image
-                if parsed_repl.license: kwargs['license_image'] = parsed_repl.license
-                
+                if parsed_repl.size:
+                    kwargs["size"] = parsed_repl.size
+                if parsed_repl.color:
+                    kwargs["color"] = parsed_repl.color
+                if parsed_repl.type_image:
+                    kwargs["type_image"] = parsed_repl.type_image
+                if parsed_repl.license:
+                    kwargs["license_image"] = parsed_repl.license
+
                 if parsed_repl.query:
-                    answer = searcher.search(parsed_repl.query, search_type=parsed_repl.type, timelimit=parsed_repl.timelimit, region=parsed_repl.region, **kwargs)
-                    print(f"\n⏱️  耗时: {answer.elapsed_ms}ms | 找到 {answer.validation['unique_results']} 个结果")
+                    answer = searcher.search(
+                        parsed_repl.query,
+                        search_type=parsed_repl.type,
+                        timelimit=parsed_repl.timelimit,
+                        region=parsed_repl.region,
+                        **kwargs,
+                    )
+                    print(
+                        f"\n⏱  {answer.elapsed_ms}ms | "
+                        f"{answer.validation['unique_results']} results | "
+                        f"confidence: {answer.confidence}"
+                    )
                     if answer.sources:
-                        for s in answer.sources[:5]: # REPL 中只显示前 5 个
+                        for s in answer.sources[:5]:
                             print(f"  {s.rank}. [{s.engine}] {s.title[:60]}")
                             print(f"     {s.url}")
             except KeyboardInterrupt:
@@ -287,39 +489,62 @@ def main():
                 break
         return
 
+    # Single-query mode
     kwargs = {}
-    if args.size: kwargs['size'] = args.size
-    if args.color: kwargs['color'] = args.color
-    if args.type_image: kwargs['type_image'] = args.type_image
-    if args.license: kwargs['license_image'] = args.license
-    
-    answer = searcher.search(args.query, search_type=args.type, timelimit=args.timelimit, region=args.region, **kwargs)
-    
+    if args.size:
+        kwargs["size"] = args.size
+    if args.color:
+        kwargs["color"] = args.color
+    if args.type_image:
+        kwargs["type_image"] = args.type_image
+    if args.license:
+        kwargs["license_image"] = args.license
+
+    answer = searcher.search(
+        args.query,
+        search_type=args.type,
+        timelimit=args.timelimit,
+        region=args.region,
+        **kwargs,
+    )
+
     if args.json:
         print(json.dumps(asdict(answer), indent=2, ensure_ascii=False))
     else:
         print(f"\n{'='*60}")
-        print(f"🔍 搜索: {answer.query} (类型: {answer.search_type} | 地区: {args.region})")
-        print(f"⏱️  耗时: {answer.elapsed_ms}ms | 置信度: {answer.confidence}")
-        print(f"📊 结果: 找到 {answer.validation['unique_results']} 个独立结果")
-        if answer.metadata['errors']:
-            print(f"⚠️ 警告: 发生 {len(answer.metadata['errors'])} 个引擎错误")
+        print(
+            f"🔍 Query: {answer.query} "
+            f"(type: {answer.search_type} | region: {args.region})"
+        )
+        print(
+            f"⏱  {answer.elapsed_ms}ms | "
+            f"confidence: {answer.confidence}"
+        )
+        print(
+            f"📊 {answer.validation['unique_results']} unique results "
+            f"({answer.validation['cross_validated']} cross-validated)"
+        )
+        if answer.metadata["errors"]:
+            print(f"⚠  {len(answer.metadata['errors'])} engine error(s)")
         print(f"{'='*60}\n")
-        
+
         if answer.sources:
-            print("📋 简明摘要:\n")
+            print("📋 Summary:\n")
             print(answer.answer)
             print(f"\n{'-'*60}")
-            print("🔗 详细来源:")
+            print("🔗 Sources:")
             for s in answer.sources:
                 badge = "✓" if s.cross_validated else "○"
                 date_str = f" [{s.date}]" if s.date else ""
                 extra_str = f" {s.extra}" if s.extra else ""
-                print(f"  {s.rank}. {badge} [{s.engine}] {s.title[:60]}{date_str}{extra_str}")
-                # v9.0 优化：不再截断 URL，完整输出
+                print(
+                    f"  {s.rank}. {badge} [{s.engine}] "
+                    f"{s.title[:60]}{date_str}{extra_str}"
+                )
                 print(f"     URL: {s.url}")
         else:
-            print("❌ 未找到结果")
+            print("❌ No results found.")
+
 
 if __name__ == "__main__":
     main()

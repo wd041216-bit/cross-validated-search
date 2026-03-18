@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""
-Free Web Search Ultimate - 网页浏览与提取 (v10.0 CLI-Anything Harness)
-修复 gzip 解压问题，放宽内容过滤以获取更多有效文本
+"""Free Web Search Ultimate - Web Page Browser and Text Extractor (v13.0).
+
+Fetches a URL, handles gzip/deflate decompression, and extracts readable
+text content using BeautifulSoup (with a regex fallback).
+
+Entry point:
+    browse-page <url> [--max-chars N] [--json]
 """
 import argparse
 import gzip
@@ -11,99 +15,157 @@ import ssl
 import sys
 import urllib.request
 
+# Disable SSL verification globally to handle restrictive network environments
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
 
-def extract_text(html: str) -> str:
-    """文本提取，放宽了对 nav/header/footer 的过滤以避免误删正文"""
+
+def extract_text(html: str):
+    """Extract the title and readable text content from an HTML string.
+
+    Removes script, style, noscript, iframe, svg, canvas, and form tags.
+    Navigation, header, and footer elements are intentionally kept to avoid
+    accidentally discarding main content.
+
+    Uses BeautifulSoup with lxml if available; falls back to regex otherwise.
+
+    Args:
+        html: Raw HTML string to parse.
+
+    Returns:
+        A tuple of (title, text) where title is the page title (or
+        'Unknown Title' if not found) and text is the cleaned body text
+        with excess whitespace collapsed.
+    """
     try:
         from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html, 'lxml')
-        
-        # 移除绝对无用的标签 (保留 nav, footer, header 等可能有用的上下文)
-        for tag in soup(['script', 'style', 'noscript', 'iframe', 'svg', 'canvas', 'form']):
+
+        soup = BeautifulSoup(html, "lxml")
+
+        # Remove tags that never contain useful content
+        for tag in soup(["script", "style", "noscript", "iframe", "svg", "canvas", "form"]):
             tag.decompose()
-            
-        # 提取标题
+
         title = "Unknown Title"
         if soup.title:
-            title = soup.title.get_text(strip=True)
-            if not title:
-                title = "Unknown Title"
-        
-        # 提取正文
-        text = soup.get_text(separator=' ', strip=True)
-        # 清理多余空白
-        text = re.sub(r'\s+', ' ', text)
-        
+            title = soup.title.get_text(strip=True) or "Unknown Title"
+
+        text = soup.get_text(separator=" ", strip=True)
+        text = re.sub(r"\s+", " ", text)
+
         return title, text
     except ImportError:
-        # Fallback to regex if bs4 not available
-        title_match = re.search(r'<title[^>]*>(.*?)</title>', html, re.I | re.DOTALL)
+        # Regex fallback when BeautifulSoup is not installed
+        title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.DOTALL)
         title = "Unknown Title"
         if title_match:
-            title = re.sub(r'<[^>]+>', '', title_match.group(1)).strip()
-            title = re.sub(r'\s+', ' ', title)
-        
-        text = re.sub(r'<script[^>]*>.*?</script>', ' ', html, flags=re.DOTALL|re.I)
-        text = re.sub(r'<style[^>]*>.*?</style>', ' ', text, flags=re.DOTALL|re.I)
-        text = re.sub(r'<[^>]+>', ' ', text)
-        text = re.sub(r'\s+', ' ', text).strip()
+            title = re.sub(r"<[^>]+>", "", title_match.group(1)).strip()
+            title = re.sub(r"\s+", " ", title)
+
+        text = re.sub(r"<script[^>]*>.*?</script>", " ", html, flags=re.DOTALL | re.I)
+        text = re.sub(r"<style[^>]*>.*?</style>", " ", text, flags=re.DOTALL | re.I)
+        text = re.sub(r"<[^>]+>", " ", text)
+        text = re.sub(r"\s+", " ", text).strip()
         return title, text
 
+
 def browse(url: str, max_chars: int = 10000) -> dict:
+    """Fetch a URL and return its extracted text content.
+
+    Handles gzip and deflate content encoding automatically.
+    Truncates the output to max_chars characters.
+
+    Args:
+        url: The URL to fetch and extract text from.
+        max_chars: Maximum number of characters to return in the content
+            field (default: 10000). The full length is always reported.
+
+    Returns:
+        A dict with the following keys on success:
+            - status (str): 'success'
+            - url (str): The requested URL.
+            - title (str): The page title.
+            - content (str): Extracted text, truncated to max_chars.
+            - truncated (bool): True if the content was truncated.
+            - total_length (int): Full length of the extracted text.
+
+        On error, returns:
+            - status (str): 'error'
+            - url (str): The requested URL.
+            - error (str): The error message.
+    """
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate',
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate",
     }
-    
+
     try:
         req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=15, context=ctx) as r:
             raw = r.read()
-            encoding = r.headers.get('Content-Encoding', '')
-            
-            # 自动解压 gzip 内容
-            if encoding == 'gzip':
-                html = gzip.decompress(raw).decode('utf-8', errors='ignore')
-            elif encoding == 'deflate':
+            encoding = r.headers.get("Content-Encoding", "")
+
+            if encoding == "gzip":
+                html = gzip.decompress(raw).decode("utf-8", errors="ignore")
+            elif encoding == "deflate":
                 import zlib
-                html = zlib.decompress(raw).decode('utf-8', errors='ignore')
+                html = zlib.decompress(raw).decode("utf-8", errors="ignore")
             else:
-                html = raw.decode('utf-8', errors='ignore')
-            
+                html = raw.decode("utf-8", errors="ignore")
+
             title, text = extract_text(html)
-            
             content = text[:max_chars]
             is_truncated = len(text) > max_chars
-            
+
             return {
                 "status": "success",
                 "url": url,
                 "title": title,
                 "content": content,
                 "truncated": is_truncated,
-                "total_length": len(text)
+                "total_length": len(text),
             }
     except Exception as e:
         return {
             "status": "error",
             "url": url,
-            "error": str(e)
+            "error": str(e),
         }
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Web Page Browser (v10.0 CLI-Anything Harness)")
-    parser.add_argument("url", help="URL to browse")
-    parser.add_argument("--max-chars", type=int, default=10000, help="Maximum characters to return")
-    parser.add_argument("--json", action="store_true", help="Output as JSON")
-    
+    """CLI entry point for browse-page command."""
+    parser = argparse.ArgumentParser(
+        description="Free Web Search Ultimate - Web Page Browser (v13.0)",
+        epilog=(
+            "Examples:\n"
+            "  browse-page https://example.com\n"
+            "  browse-page https://example.com --max-chars 5000 --json"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("url", help="URL to fetch and extract text from")
+    parser.add_argument(
+        "--max-chars",
+        type=int,
+        default=10000,
+        help="Maximum characters to return (default: 10000)",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output result as JSON",
+    )
+
     args = parser.parse_args()
-    
     result = browse(args.url, args.max_chars)
-    
+
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
@@ -111,11 +173,14 @@ def main():
             print(f"\n📄 {result['title']}")
             print(f"🔗 {result['url']}")
             print(f"{'='*60}\n")
-            print(result['content'])
-            if result['truncated']:
-                print(f"\n... [Truncated. Total length: {result['total_length']} chars]")
+            print(result["content"])
+            if result["truncated"]:
+                print(
+                    f"\n... [Truncated. Total length: {result['total_length']} chars]"
+                )
         else:
             print(f"❌ Error browsing {result['url']}: {result['error']}")
+
 
 if __name__ == "__main__":
     main()

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.0.0] - 2026-03-18
+
+### Changed
+- Fully internationalized all user-facing strings, error messages, and code comments to English for universal compatibility
+- Rewrote all module, class, and function docstrings to Google style with complete `Args:`, `Returns:`, and `Example:` sections
+- Expanded all multi-parameter function signatures to multi-line format per PEP 8 and Google style guide
+- `UltimateSearcher.search()` docstring now documents all `timelimit` values (`d/w/m/y`) and `search_type` options
+- `_cross_validate()` now uses typed `Dict[str, List[Source]]` annotation
+- Error fallback message changed to English: "No results found. The search engine may be rate-limited."
+- CLI output formatting improved: unified spacing, cleaner REPL prompt
+- `browse_page.py` module docstring updated; all inline comments translated to English
+- Version bumped to 13.0.0
+
 ## [12.0.0] - 2026-03-18
 
 ### Added
