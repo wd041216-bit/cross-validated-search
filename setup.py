@@ -34,8 +34,10 @@ setup(
         "lxml>=4.6.0",
         "ddgs>=0.1.0",
         "mcp>=1.1.2",
-        "tavily-python>=0.3.0",
     ],
+    extras_require={
+        "tavily": ["tavily-python>=0.3.0"],
+    },
     entry_points={
         "console_scripts": [
             "search-web=free_web_search.search_web:main",

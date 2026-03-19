@@ -233,7 +233,7 @@ class UltimateSearcher:
         Args:
             query: The search query string.
             search_type: One of 'text', 'news'. Other types return [].
-            timelimit: Time filter (mapped to Tavily days parameter).
+            timelimit: Time filter (mapped to Tavily time_range parameter).
             region: Unused (Tavily does not support region filtering).
             max_results: Maximum number of results to fetch.
             **kwargs: Additional parameters (unused).
@@ -249,10 +249,10 @@ class UltimateSearcher:
         try:
             from tavily import TavilyClient
 
-            client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+            client = TavilyClient()
 
-            # Map timelimit to Tavily's days parameter
-            days_map = {"d": 1, "w": 7, "m": 30, "y": 365}
+            # Map timelimit to Tavily's time_range parameter
+            time_range_map = {"d": "day", "w": "week", "m": "month", "y": "year"}
             tavily_kwargs = {
                 "query": query,
                 "max_results": max_results,
@@ -260,8 +260,8 @@ class UltimateSearcher:
             }
             if search_type == "news":
                 tavily_kwargs["topic"] = "news"
-            if timelimit and timelimit in days_map:
-                tavily_kwargs["days"] = days_map[timelimit]
+            if timelimit and timelimit in time_range_map:
+                tavily_kwargs["time_range"] = time_range_map[timelimit]
 
             response = client.search(**tavily_kwargs)
 
