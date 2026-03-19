@@ -59,6 +59,25 @@ cd cross-validated-search
 pip install -e .
 ```
 
+### 🚀 Enhanced Version (with API Providers)
+
+Need more search providers? Check out the **[with-api-providers](https://github.com/wd041216-bit/cross-validated-search/tree/with-api-providers)** branch:
+
+```bash
+# Install enhanced version with Tavily support
+pip install git+https://github.com/wd041216-bit/cross-validated-search@with-api-providers
+
+# Or with Tavily extra
+pip install "cross-validated-search[tavily] @ git+https://github.com/wd041216-bit/cross-validated-search@with-api-providers"
+```
+
+**Enhanced features:**
+- 🔍 **Tavily API** — Premium search quality (requires `TAVILY_API_KEY`)
+- 🔄 **Parallel execution** — Multiple engines running concurrently
+- 📊 **Better relevance** — Advanced search depth options
+
+> **Note:** The enhanced version requires API keys. The main branch remains **free and keyless**.
+
 ## 🔌 Integration Guide
 
 ### Claude Desktop & Cursor (via MCP)
