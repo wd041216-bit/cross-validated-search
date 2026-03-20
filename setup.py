@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="free-web-search-ultimate",
-    version="14.0.0",
+    version="15.0.0",
     author="wd041216-bit",
     author_email="wd041216@uw.edu",
     description="Cross-Validated Web Search for Hallucination-Free LLM Responses - Zero-cost, privacy-first, multi-source verification",

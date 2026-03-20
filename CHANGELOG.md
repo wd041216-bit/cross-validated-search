@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [15.0.0] - 2026-03-20
+
+### Added
+- **Universal IDE Support**: Now works with 10+ platforms out of the box
+  - Claude Code: `.claude-plugin/SKILL.md` with UserPromptSubmit hooks
+  - Cursor: `.cursor/rules/cross-validated-search.md`
+  - GitHub Copilot: `.github/copilot/instructions.md`
+  - Gemini CLI: `.gemini/SKILL.md`
+  - Continue: `.continue/skills/cross-validated-search/SKILL.md`
+  - Kiro: `.kiro/steering/cross-validated-search.md`
+  - OpenCode: `.opencode/instructions.md`
+  - Codex: `.codex/SKILL.md`
+  - OpenClaw: `free_web_search/skills/SKILL.md` (existing)
+  - MCP: `free-web-search-mcp` (existing)
+  - CLI: `search-web`, `browse-page` (existing)
+- **Platform Detection Metadata**: Added `platforms` field to `_meta.json`
+- **IDE-Specific Hooks**: Claude Code now has UserPromptSubmit hooks for automatic factual query detection
+- **Comprehensive README**: Updated with all supported platforms and installation instructions
+
+### Changed
+- Version bumped to 15.0.0
+- README completely rewritten to emphasize universal IDE support
+- SKILL.md now lists all supported platforms in frontmatter
+- Package description updated to mention universal IDE support
+
+### Migration Guide
+
+**No breaking changes** — all existing functionality preserved. New IDE configurations are additive.
+
+To enable IDE-specific features:
+- Claude Code: Install package, `.claude-plugin/SKILL.md` is auto-detected
+- Cursor: Copy `.cursor/rules/` to your project
+- Copilot: `.github/copilot/instructions.md` is auto-detected by VS Code
+- Gemini: Install package, `.gemini/SKILL.md` is auto-detected
+
 ## [14.0.0] - 2026-03-19
 
 ### BREAKING CHANGE

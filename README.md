@@ -7,8 +7,6 @@
   [![PyPI version](https://badge.fury.io/py/cross-validated-search.svg)](https://pypi.org/project/cross-validated-search/)
   [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
   [![MCP Ready](https://img.shields.io/badge/MCP-Ready-purple.svg)](https://modelcontextprotocol.io/)
-  [![CLI-Anything](https://img.shields.io/badge/CLI--Anything-Compatible-success.svg)](https://github.com/HKUDS/CLI-Anything)
-  [![OpenClaw](https://img.shields.io/badge/OpenClaw-Skill-orange.svg)](https://github.com/openclaw/awesome-openclaw)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 </div>
 
@@ -24,7 +22,25 @@ Every LLM hallucinates facts—Claude, GPT-4, Gemini, Llama—all of them. This 
   <img src="assets/architecture.png" alt="Architecture Diagram" width="90%"/>
 </div>
 
-One plugin, every ecosystem. Whether you use Claude Desktop, Cursor, OpenClaw, or a custom LangChain agent, this plugin connects your LLM to verified facts through cross-validation.
+One plugin, every ecosystem. Whether you use Claude Code, Cursor, Copilot, Gemini, OpenClaw, or a custom agent, this plugin connects your LLM to verified facts through cross-validation.
+
+## 🌟 Supported Platforms
+
+| Platform | Support | Configuration |
+|----------|---------|--------------|
+| **Claude Code** | ✅ Native | `.claude-plugin/SKILL.md` |
+| **Cursor** | ✅ Native | `.cursor/rules/` |
+| **GitHub Copilot** | ✅ Native | `.github/copilot/` |
+| **Gemini CLI** | ✅ Native | `.gemini/SKILL.md` |
+| **Continue** | ✅ Native | `.continue/skills/` |
+| **Kiro** | ✅ Native | `.kiro/steering/` |
+| **OpenCode** | ✅ Native | `.opencode/instructions.md` |
+| **Codex** | ✅ Native | `.codex/SKILL.md` |
+| **OpenClaw** | ✅ Native | `free_web_search/skills/SKILL.md` |
+| **MCP Servers** | ✅ MCP | `free-web-search-mcp` |
+| **CLI** | ✅ Universal | `search-web`, `browse-page` |
+| **LangChain** | ✅ Tool wrapper | Python integration |
+| **OpenAI Function Calling** | ✅ JSON schema | Function definitions |
 
 ## 🌟 The Cross-Validation Paradigm
 
@@ -46,7 +62,7 @@ When this plugin is installed, the AI agent:
 ## 📦 Installation
 
 ```bash
-pip install cross-validated-search
+pip install free-web-search-ultimate
 ```
 
 > **Requirements:** Python 3.10+
@@ -66,9 +82,6 @@ Need more search providers? Check out the **[with-api-providers](https://github.
 ```bash
 # Install enhanced version with Tavily support
 pip install git+https://github.com/wd041216-bit/cross-validated-search@with-api-providers
-
-# Or with Tavily extra
-pip install "cross-validated-search[tavily] @ git+https://github.com/wd041216-bit/cross-validated-search@with-api-providers"
 ```
 
 **Enhanced features:**
@@ -80,26 +93,55 @@ pip install "cross-validated-search[tavily] @ git+https://github.com/wd041216-bi
 
 ## 🔌 Integration Guide
 
-### Claude Desktop & Cursor (via MCP)
+### Claude Code
 
-Add to your `claude_desktop_config.json` or Cursor MCP settings:
+The `.claude-plugin/SKILL.md` is automatically detected. Just install the package:
+
+```bash
+pip install free-web-search-ultimate
+```
+
+### Cursor
+
+Copy `.cursor/rules/cross-validated-search.md` to your project, or install globally:
+
+```bash
+pip install free-web-search-ultimate
+```
+
+### GitHub Copilot
+
+The `.github/copilot/instructions.md` is automatically detected by VS Code Copilot.
+
+### Gemini CLI
+
+The `.gemini/SKILL.md` is automatically detected when installed.
+
+### Continue
+
+Copy `.continue/skills/cross-validated-search/` to your Continue skills directory.
+
+### OpenClaw (CLI-Anything)
+
+```bash
+pip install free-web-search-ultimate
+```
+
+The skill is auto-discovered from the bundled `SKILL.md`.
+
+### MCP Integration (Claude Desktop, Cursor, Continue)
+
+Add to your `claude_desktop_config.json` or MCP settings:
 
 ```json
 {
   "mcpServers": {
-    "cross-validated-search": {
-      "command": "cross-validated-mcp",
+    "free-web-search": {
+      "command": "free-web-search-mcp",
       "args": []
     }
   }
 }
-```
-
-### OpenClaw (via CLI-Anything)
-
-```bash
-# Install — the skill is auto-discovered from the bundled SKILL.md
-pip install cross-validated-search
 ```
 
 ### LangChain / Custom Agents
@@ -110,7 +152,7 @@ import subprocess, json
 
 def cross_validate_search(query: str) -> str:
     result = subprocess.run(
-        ["cross-validate", query, "--json"],
+        ["search-web", query, "--json"],
         capture_output=True, text=True
     )
     data = json.loads(result.stdout)
@@ -147,23 +189,23 @@ tools = [
 
 ## 💻 CLI Usage
 
-### `cross-validate` — Cross-Validated Web Search
+### `search-web` — Cross-Validated Web Search
 
 ```bash
 # General knowledge (3+ sources, cross-validated)
-cross-validate "What is the population of Tokyo?"
+search-web "What is the population of Tokyo?"
 
 # Breaking news (multiple news sources)
-cross-validate "OpenAI GPT-5" --type news --timelimit w
+search-web "OpenAI GPT-5" --type news --timelimit w
 
 # Images (verified sources)
-cross-validate "neural network diagram" --type images
+search-web "neural network diagram" --type images
 
 # Chinese search
-cross-validate "人工智能最新进展" --region zh-cn
+search-web "人工智能最新进展" --region zh-cn
 
 # JSON output for programmatic use
-cross-validate "quantum computing" --json
+search-web "quantum computing" --json
 ```
 
 ### `browse-page` — Deep Page Reading
@@ -194,9 +236,9 @@ browse-page "https://example.com/article" --json
 | **Confidence Score** | **Yes** | No | No | No |
 | **Hallucination Prevention** | **Yes** | No | No | No |
 | API Key Required | **No** | Yes | Yes | Yes |
+| IDE Support | **10+** | Limited | No | No |
 | MCP Support | **Yes** | Partial | No | No |
-| CLI-Anything | **Yes** | No | No | No |
 
 ## 📄 License
 
-MIT License — free for personal and commercial use.
+MIT-0 License — free for personal and commercial use. No attribution required.

@@ -1,25 +1,50 @@
 ---
-name: free-web-search-ultimate
-version: "14.0.0"
+name: cross-validated-search
+version: "15.0.0"
 description: >
   Cross-Validated Web Search for Hallucination-Free LLM Responses.
   Multi-source verification prevents AI hallucinations.
   Zero-cost, privacy-first, supports text/news/images/books/videos.
-homepage: https://github.com/wd041216-bit/free-web-search-ultimate
+  Universal IDE support: Claude Code, Cursor, Copilot, Gemini, Continue, Kiro, OpenCode, Codex, OpenClaw.
+homepage: https://github.com/wd041216-bit/cross-validated-search
+platforms:
+  - claude-code
+  - cursor
+  - copilot
+  - gemini
+  - continue
+  - kiro
+  - opencode
+  - codex
+  - openclaw
+  - mcp
+  - cli
 ---
 
-# Free Web Search Ultimate v14.0 — Cross-Validated Search
+# Cross-Validated Search v15.0 — Universal Anti-Hallucination Skill
 
 ## Overview
 
 **The only search skill that actively prevents LLM hallucinations through multi-source cross-validation.**
 
-When an LLM answers a question, it may fabricate facts, hallucinate details, or rely on outdated training data. This skill solves that problem by:
+Works everywhere:
+- **Claude Code** — `.claude-plugin/SKILL.md`
+- **Cursor** — `.cursor/rules/`
+- **GitHub Copilot** — `.github/copilot/`
+- **Gemini CLI** — `.gemini/SKILL.md`
+- **Continue** — `.continue/skills/`
+- **Kiro** — `.kiro/steering/`
+- **OpenCode** — `.opencode/instructions.md`
+- **Codex** — `.codex/SKILL.md`
+- **OpenClaw** — `free_web_search/skills/SKILL.md`
+- **MCP Servers** — `free-web-search-mcp`
+- **CLI** — `search-web`, `browse-page`
 
-1. **Fetching multiple independent sources** from the web
-2. **Cross-validating facts across sources** to identify consensus
-3. **Providing confidence scores** (✅ Verified / 🟢 Likely True / 🟡 Uncertain / 🔴 Likely False)
-4. **Citing all sources** so users can verify claims
+## Installation
+
+```bash
+pip install free-web-search-ultimate
+```
 
 ## Why Cross-Validation Matters
 
@@ -137,17 +162,9 @@ When using this skill, you get:
 | `videos` | Tutorials, presentations | ✅ Multiple video platforms |
 | `books` | Academic, in-depth topics | ✅ Cross-book verification |
 
-## Integration
+## MCP Integration (Claude Desktop / Cursor / Continue)
 
-This skill works with:
-- **OpenClaw** — native skill integration
-- **Claude Desktop / Cursor** — via MCP server (`free-web-search-mcp`)
-- **LangChain** — via Python tool wrappers
-- **OpenAI Function Calling** — via JSON schema definitions
-
-## MCP Server Setup (Claude Desktop / Cursor)
-
-Add to your `claude_desktop_config.json`:
+Add to your `claude_desktop_config.json` or MCP settings:
 
 ```json
 {
@@ -158,20 +175,6 @@ Add to your `claude_desktop_config.json`:
     }
   }
 }
-```
-
-Install via pip (recommended):
-
-```bash
-pip install free-web-search-ultimate
-```
-
-Or clone and install from source:
-
-```bash
-git clone https://github.com/wd041216-bit/free-web-search-ultimate.git
-cd free-web-search-ultimate
-pip install -e .
 ```
 
 ## Requirements

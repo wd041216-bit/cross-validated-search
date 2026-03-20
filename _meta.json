@@ -1,7 +1,7 @@
 {
   "name": "cross-validated-search",
-  "version": "14.0.0",
-  "description": "Cross-Validated Web Search for Hallucination-Free LLM Responses. Zero-cost web search with multi-source verification to prevent AI hallucinations.",
+  "version": "15.0.0",
+  "description": "Cross-Validated Web Search for Hallucination-Free LLM Responses. Zero-cost web search with multi-source verification to prevent AI hallucinations. Universal IDE support: Claude Code, Cursor, Copilot, Gemini, Continue, Kiro, OpenCode, Codex, OpenClaw.",
   "author": "wd041216-bit",
   "homepage": "https://github.com/wd041216-bit/cross-validated-search",
   "tags": [
@@ -13,7 +13,28 @@
     "cli-anything",
     "openclaw",
     "verification",
-    "anti-hallucination"
+    "anti-hallucination",
+    "claude-code",
+    "cursor",
+    "copilot",
+    "gemini",
+    "continue",
+    "kiro",
+    "opencode",
+    "codex"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "platforms": [
+    "claude-code",
+    "cursor",
+    "copilot",
+    "gemini",
+    "continue",
+    "kiro",
+    "opencode",
+    "codex",
+    "openclaw",
+    "mcp",
+    "cli"
+  ]
 }
