@@ -1,0 +1,15 @@
+name: Probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Echo probe
+      run: |
+        echo "probe workflow is running"
+        python --version
