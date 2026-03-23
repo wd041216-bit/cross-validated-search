@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="assets/banner.png" alt="Cross-Validated Search" width="100%"/>
+  <img src="assets/banner.svg" alt="Cross-Validated Search" width="100%"/>
   <h1>Cross-Validated Search</h1>
   <p><strong>Evidence-aware web search, browsing, and claim verification for AI agents.</strong></p>
   <p><em>CLI + MCP + skill surfaces for Gemini, OpenClaw, and other agent runtimes.</em></p>
 
-  [![PyPI package](https://badge.fury.io/py/cross-validated-search.svg)](https://pypi.org/project/cross-validated-search/)
-  [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
+  [![PyPI package](https://img.shields.io/pypi/v/cross-validated-search?label=pypi%20package)](https://pypi.org/project/cross-validated-search/)
+  [![Python Version](https://img.shields.io/pypi/pyversions/cross-validated-search)](https://python.org)
   [![MCP Ready](https://img.shields.io/badge/MCP-Ready-purple.svg)](https://modelcontextprotocol.io/)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 </div>
