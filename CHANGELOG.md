@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [16.0.0] - 2026-03-24
+
 ### Changed
 - Renamed the canonical PyPI package to `cross-validated-search` and the canonical Python module to `cross_validated_search`.
 - Kept `free_web_search` imports and `free-web-search-mcp` available as compatibility aliases for existing integrations.
