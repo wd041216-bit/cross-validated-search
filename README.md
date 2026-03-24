@@ -26,6 +26,8 @@ If you are reviewing this repo for collection or ecosystem inclusion, the fastes
    [docs/ecosystem-readiness.md](docs/ecosystem-readiness.md)
 3. review the free dual-provider bootstrap:
    [docs/searxng-self-hosted.md](docs/searxng-self-hosted.md)
+4. review Gemini gallery readiness:
+   [docs/gemini-submission-checklist.md](docs/gemini-submission-checklist.md)
 
 ## 60-second verification
 
@@ -173,7 +175,7 @@ Python 3.10+ is required.
 | --- | --- | --- |
 | CLI | Yes | `search-web`, `browse-page`, `verify-claim`, `evidence-report` |
 | MCP | Yes | `cross-validated-search-mcp` |
-| Gemini CLI | Yes | `.gemini/SKILL.md` |
+| Gemini CLI | Yes | `gemini-extension.json`, root `skills/`, and `.gemini/SKILL.md` |
 | OpenClaw | Yes | `cross_validated_search/skills/SKILL.md` |
 | Claude Code / Cursor / Continue / Copilot | Yes | Bundled skill and instruction files |
 

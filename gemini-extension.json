@@ -1,0 +1,6 @@
+{
+  "name": "cross-validated-search",
+  "version": "16.0.0",
+  "description": "Evidence-aware verification for Gemini CLI with live search, claim checks, and citation-ready evidence reports.",
+  "contextFileName": "GEMINI.md"
+}
