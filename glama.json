@@ -1,6 +1,6 @@
 {
-  "name": "cross-validated-search",
-  "description": "Source-backed web search, page reading, and evidence-aware claim checking for AI agents. Zero-cost, privacy-first, and keyless by default.",
-  "homepage": "https://github.com/wd041216-bit/cross-validated-search",
-  "license": "MIT"
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": [
+    "wd041216-bit"
+  ]
 }
